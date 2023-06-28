@@ -10,7 +10,7 @@ from sklearn.tree import DecisionTreeClassifier
 import time
 
 inicio = time.time()
-data = pd.read_csv('D:/IA/Decision-Tree-Classifier/Titanic-Dataset.csv')
+data = pd.read_csv('D:/IA/Decision-Tree-Classifier/Cancer_Data.csv')
 
 data = data.dropna(axis=1, how='all')
 
@@ -20,10 +20,7 @@ for y in data.columns:
         lbl.fit(list(data[y].values))
         data[y] = lbl.transform(list(data[y].values))
 
-colunas = ['PassengerId',  'Survived', 'Name', 'Ticket', 'Fare',
-           'Cabin',
-           'Embarked',
-           ]
+colunas = ['id', 'diagnosis']
 
 dt_copy = data.copy()
 dt_copy.drop(colunas, axis=1, inplace=True)
@@ -42,13 +39,13 @@ for column in dt_copy.columns:
 
     dt_copy.loc[outliers, column] = np.nan
 
-dt_copy = dt_copy.join(data['Survived'])
+dt_copy = dt_copy.join(data['diagnosis'])
 
 dt_copy = dt_copy[dt_copy.columns[dt_copy.isna().sum()/dt_copy.shape[0] < 0.9]]
 dt_copy = dt_copy.fillna(dt_copy.median())
 
 # exibindo correlações
-correlations = dt_copy.corrwith(dt_copy['Survived'])
+correlations = dt_copy.corrwith(dt_copy['diagnosis'])
 print(correlations.sort_values(ascending=False).head(10))
 print('\n\n')
 print(correlations.sort_values(ascending=True).head(10))
@@ -57,14 +54,17 @@ print(correlations.abs().sort_values(ascending=False).head(10))
 print('\n\n')
 
 # criando listas X (features) e y (resultado esperado)
-X = dt_copy.drop(columns=['Survived'])
+X = dt_copy.drop(columns=['diagnosis'])
 
-X = dt_copy[['Pclass', 'Sex', 'Age', 'SibSp', 'Parch']]
+X = dt_copy[['radius_worst', 'texture_worst',
+       'perimeter_worst', 'area_worst', 'smoothness_worst',
+       'compactness_worst', 'concavity_worst', 'concave points_worst',
+       'symmetry_worst', 'fractal_dimension_worst']]
 
 scaler =StandardScaler().fit(X)
 X = scaler.transform(X)
 
-y = dt_copy['Survived']
+y = dt_copy['diagnosis']
 
 # separando 66% do dataset para treinamento e 33% para validação
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.33, random_state=101)
@@ -93,11 +93,11 @@ for model_names, model in zip(names,classifiers):
     print(f'Model {model_names}:\n\n'
           f'tn {tn}, fp {fp}, fn {fn}, tp {tp}\n\n'
           f'Accuracy: {acs}\n\n'
-      f'Classification Report:\n{classification_report(y_test, prds, target_names = ["morreu", "sobreviveu"])}\n')
+      f'Classification Report:\n{classification_report(y_test, prds, target_names = ["Benign", "Malignant"])}\n')
     
     fim = time.time()
     tempo_de_processamento = fim - inicio
     print(f"O tempo de processamento foi de {tempo_de_processamento} segundos.")
     
-    ConfusionMatrixDisplay.from_estimator(model, X_test, y_test, display_labels=['morreu', 'sobreviveu'], cmap='Blues', values_format='d')
+    ConfusionMatrixDisplay.from_estimator(model, X_test, y_test, display_labels=['Benign', 'Malignant'], cmap='Blues', values_format='d')
     plt.show()
